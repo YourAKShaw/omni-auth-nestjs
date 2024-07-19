@@ -1,6 +1,7 @@
 {
   "conventionalCommits.scopes": [
     "git",
-    "nest"
+    "nest",
+    "vscode"
   ]
 }
