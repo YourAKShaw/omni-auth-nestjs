@@ -3,6 +3,7 @@
     "git",
     "nest",
     "vscode",
-    "env"
+    "env",
+    "npm"
   ]
 }
