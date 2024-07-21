@@ -4,6 +4,7 @@
     "nest",
     "vscode",
     "env",
-    "npm"
+    "npm",
+    "mongo"
   ]
 }
