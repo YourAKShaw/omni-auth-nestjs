@@ -5,6 +5,7 @@
     "vscode",
     "env",
     "npm",
-    "mongo"
+    "mongo",
+    "user"
   ]
 }
