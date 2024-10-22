@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { configValidationSchema } from './config/config.validation';
+import { AuthModule } from './auth/auth.module';
 import CustomLogger from './common/logger';
 
 @Module({
@@ -21,6 +22,7 @@ import CustomLogger from './common/logger';
       }),
     }),
     UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [
