@@ -5,13 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
 import { configValidationSchema } from './config/config.validation';
+import CustomLogger from './common/logger';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: ['.env'], // You can specify multiple files here if needed
+      envFilePath: ['.env'],
       validationSchema: configValidationSchema,
-      isGlobal: true, // Make ConfigModule global to avoid importing it in every module
+      isGlobal: true, // Make ConfigModule global
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
@@ -22,6 +23,13 @@ import { configValidationSchema } from './config/config.validation';
     UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: CustomLogger,
+      useClass: CustomLogger, // Use CustomLogger class globally
+    },
+  ],
+  exports: [CustomLogger], // Export it to make it accessible in other modules
 })
 export class AppModule {}
