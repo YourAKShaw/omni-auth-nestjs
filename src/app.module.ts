@@ -4,11 +4,14 @@ import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './user/user.module';
+import { configValidationSchema } from './config/config.validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      envFilePath: ['.env'], // You can specify multiple files here if needed
+      validationSchema: configValidationSchema,
+      isGlobal: true, // Make ConfigModule global to avoid importing it in every module
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
