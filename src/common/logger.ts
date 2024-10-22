@@ -1,10 +1,8 @@
-import { Injectable } from '@nestjs/common';
 import * as emoji from 'node-emoji';
 import * as winston from 'winston';
 import * as chalk from 'chalk';
 import { ConfigService } from '@nestjs/config';
 
-@Injectable() // Make the class injectable
 export default class CustomLogger {
   private logger: winston.Logger;
   private context: string;
@@ -50,9 +48,10 @@ export default class CustomLogger {
 
     winston.addColors(customLevels.colors);
 
+    // Bind the context explicitly
     const myFormat = winston.format.printf((info) => {
       let emojiToLog = '';
-      const level = info.level.replace(/\x1B\[[0-9;]*m/g, '');
+      const level = info.level.replace(/\x1B\[[0-9;]*m/g, ''); // Remove color codes for comparison
 
       switch (level) {
         case 'crit':
@@ -90,11 +89,14 @@ export default class CustomLogger {
         hour12: true,
       });
 
+      // Use `this.context` safely by binding it explicitly in the logger
+      const context = info.context || 'UnknownContext'; // Default if context is not passed
+
       return (
         `${chalk.green('[Winston]')}     ` +
         `${chalk.green('-')} ${timestamp}     ` +
         `${chalk.green('LOG')} ` +
-        `${chalk.yellow(`[${this.setContext}]`)} ` +
+        `${chalk.yellow(`[${context}]`)} ` +
         `${emojiToLog} [${info.level}]:  ` +
         `${info.message}` +
         (info.splat !== undefined ? `${info.splat}` : ' ')
@@ -123,5 +125,10 @@ export default class CustomLogger {
       transports: [consoleTransport, fileTransport],
       format: winston.format.combine(winston.format.timestamp(), myFormat),
     });
+  }
+
+  // Add an additional method to log with the context explicitly
+  public logWithContext(level: string, message: string) {
+    this.logger.log(level, message, { context: this.context });
   }
 }
