@@ -16,11 +16,15 @@ export class UserService {
     private jwtService: JwtService, // Inject JwtService
   ) {}
 
-  async signUp(username: string, password: string): Promise<User> {
+  async signUp(
+    email: string,
+    username: string,
+    password: string,
+  ): Promise<User> {
     // Check if the user already exists
-    const existingUser = await this.userModel.findOne({ username });
+    const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
-      throw new ConflictException('Username already exists');
+      throw new ConflictException('Email already exists');
     }
 
     // Hash the password before saving
@@ -29,6 +33,7 @@ export class UserService {
 
     // Create and save the new user
     const user = new this.userModel({
+      email,
       username,
       password: hashedPassword,
     });
