@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config'; // Import ConfigService
-import { UserModule } from '../user/user.module';
+import { UsersModule } from '../users/users.module';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
@@ -16,7 +16,7 @@ import { JwtStrategy } from './jwt.strategy';
         signOptions: { expiresIn: '1h' },
       }),
     }),
-    UserModule,
+    UsersModule,
   ],
   providers: [JwtStrategy],
   exports: [JwtModule],

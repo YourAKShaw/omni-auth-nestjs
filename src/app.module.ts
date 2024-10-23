@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UserModule } from './user/user.module';
+import { UsersModule } from './users/users.module';
 import { configValidationSchema } from './config/config.validation';
 import { AuthModule } from './auth/auth.module';
 import CustomLogger from './common/logger';
@@ -21,7 +21,7 @@ import CustomLogger from './common/logger';
         uri: configService.get<string>('MONGO_URI'),
       }),
     }),
-    UserModule,
+    UsersModule,
     AuthModule,
   ],
   controllers: [AppController],

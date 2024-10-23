@@ -6,20 +6,20 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { User, UserDocument } from './schemas/user.schema';
+import { User, UserDocument } from './schemas/users.schema';
 import * as bcrypt from 'bcrypt';
 import { ApiResponse } from 'src/common/ApiResponse';
 import CustomLogger from 'src/common/logger'; // Import CustomLogger
 
 @Injectable()
-export class UserService {
+export class UsersService {
   private readonly logger: any;
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
   ) {
-    this.logger = new CustomLogger(UserService.name).getLogger();
+    this.logger = new CustomLogger(UsersService.name).getLogger();
   }
 
   async signUp(
@@ -61,7 +61,7 @@ export class UserService {
     };
     const apiResponse = new ApiResponse<any>(
       'success',
-      'Successfully created user',
+      'successfully created user',
       201,
       data,
     );
@@ -89,7 +89,7 @@ export class UserService {
     this.logger.success(`accessToken for user with id ${user._id} generated`);
     const apiResponse = new ApiResponse<any>(
       'success',
-      'Successfully generated access token',
+      'successfully generated access token',
       201,
       { accessToken },
     );
