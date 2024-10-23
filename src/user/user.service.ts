@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt'; // Import JwtService
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
+import { ApiResponse } from 'src/common/ApiResponse';
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,7 @@ export class UserService {
     email: string,
     username: string,
     password: string,
-  ): Promise<User> {
+  ): Promise<ApiResponse<User>> {
     // Check if the user already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
@@ -37,7 +38,17 @@ export class UserService {
       username,
       password: hashedPassword,
     });
-    return user.save();
+    user.save();
+
+    const data = { username: user.username, email: user.email };
+    const apiResponse = new ApiResponse<any>(
+      'success',
+      `Successfully created user with email ${email} and username ${username}`,
+      201,
+      data,
+    );
+
+    return apiResponse;
   }
 
   async signIn(
