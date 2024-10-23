@@ -6,7 +6,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
-import { User, UserDocument } from './schemas/users.schema';
+import { User, UserDocument } from '@src/users/schemas/users.schema';
 import * as bcrypt from 'bcrypt';
 import { ApiResponse } from 'src/common/ApiResponse';
 import CustomLogger from 'src/common/logger'; // Import CustomLogger

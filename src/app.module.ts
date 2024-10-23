@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppController } from '@src/app.controller';
+import { AppService } from '@src/app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { UsersModule } from './users/users.module';
-import { configValidationSchema } from './config/config.validation';
-import { AuthModule } from './auth/auth.module';
-import CustomLogger from './common/logger';
+import { UsersModule } from '@src/users/users.module';
+import { configValidationSchema } from '@src/config/config.validation';
+import { AuthModule } from '@src/auth/auth.module';
+import CustomLogger from '@src/common/logger';
 
 @Module({
   imports: [
