@@ -43,7 +43,7 @@ export class UserService {
     const data = { username: user.username, email: user.email };
     const apiResponse = new ApiResponse<any>(
       'success',
-      `Successfully created user with email ${email} and username ${username}`,
+      'successfully created user',
       201,
       data,
     );
