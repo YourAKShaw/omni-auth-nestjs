@@ -72,18 +72,21 @@ export class UserService {
   async signIn(username: string, password: string): Promise<ApiResponse<any>> {
     const user = await this.userModel.findOne({ username });
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      this.logger.error('username not found');
+      throw new UnauthorizedException('username not found');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      this.logger.error('invalid password');
+      throw new UnauthorizedException('invalid password');
     }
 
     // Generate JWT
     const payload = { username: user.username, sub: user._id };
     const accessToken = this.jwtService.sign(payload);
 
+    this.logger.success(`accessToken for user with id ${user._id} generated`);
     const apiResponse = new ApiResponse<any>(
       'success',
       'Successfully generated access token',
