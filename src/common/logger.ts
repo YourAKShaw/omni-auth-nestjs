@@ -1,23 +1,18 @@
 import * as emoji from 'node-emoji';
 import * as winston from 'winston';
 import * as chalk from 'chalk';
-import { ConfigService } from '@nestjs/config';
 
 export default class CustomLogger {
   private logger: winston.Logger;
   private context: string;
 
-  constructor(private readonly configService: ConfigService) {
-    this.context = 'GlobalContext'; // Default global context
+  constructor(context: string) {
+    this.context = context;
     this.defineLogger();
   }
 
   public setContext(context: string) {
     this.context = context;
-  }
-
-  public getEnvironment(): string {
-    return this.configService.get<string>('NODE_ENV') || 'development';
   }
 
   public getLogger(): winston.Logger {
@@ -89,14 +84,11 @@ export default class CustomLogger {
         hour12: true,
       });
 
-      // Use `this.context` safely by binding it explicitly in the logger
-      const context = info.context || 'UnknownContext'; // Default if context is not passed
-
       return (
-        `${chalk.green('[Winston]')}     ` +
+        `${chalk.green('[Winston]')}    ` +
         `${chalk.green('-')} ${timestamp}     ` +
         `${chalk.green('LOG')} ` +
-        `${chalk.yellow(`[${context}]`)} ` +
+        `${chalk.yellow(`[${this.context}]`)} ` +
         `${emojiToLog} [${info.level}]:  ` +
         `${info.message}` +
         (info.splat !== undefined ? `${info.splat}` : ' ')

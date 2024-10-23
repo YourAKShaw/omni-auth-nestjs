@@ -5,17 +5,22 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { JwtService } from '@nestjs/jwt'; // Import JwtService
+import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
 import { ApiResponse } from 'src/common/ApiResponse';
+import CustomLogger from 'src/common/logger'; // Import CustomLogger
 
 @Injectable()
 export class UserService {
+  private readonly logger: any;
+
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private jwtService: JwtService, // Inject JwtService
-  ) {}
+    private jwtService: JwtService,
+  ) {
+    this.logger = new CustomLogger(UserService.name).getLogger();
+  }
 
   async signUp(
     email: string,
@@ -25,7 +30,14 @@ export class UserService {
     // Check if the user already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
-      throw new ConflictException('Email already exists');
+      this.logger.error('email already exists');
+      throw new ConflictException('email already exists');
+    }
+
+    const existingUserByUsername = await this.userModel.findOne({ username });
+    if (existingUserByUsername) {
+      this.logger.error('username already exists');
+      throw new ConflictException('username already exists');
     }
 
     // Hash the password before saving
@@ -38,12 +50,12 @@ export class UserService {
       username,
       password: hashedPassword,
     });
-    user.save();
+    await user.save(); // Ensure await to save user properly
 
     const data = { username: user.username, email: user.email };
     const apiResponse = new ApiResponse<any>(
       'success',
-      'successfully created user',
+      'Successfully created user',
       201,
       data,
     );
@@ -68,7 +80,7 @@ export class UserService {
 
     const apiResponse = new ApiResponse<any>(
       'success',
-      'successfully generated accessToken',
+      'Successfully generated access token',
       201,
       { accessToken },
     );
