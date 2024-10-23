@@ -70,7 +70,7 @@ export class UserService {
       'success',
       'successfully generated accessToken',
       201,
-      accessToken,
+      { accessToken },
     );
 
     return apiResponse;
