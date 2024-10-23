@@ -51,10 +51,7 @@ export class UserService {
     return apiResponse;
   }
 
-  async signIn(
-    username: string,
-    password: string,
-  ): Promise<{ accessToken: string }> {
+  async signIn(username: string, password: string): Promise<ApiResponse<any>> {
     const user = await this.userModel.findOne({ username });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -69,6 +66,13 @@ export class UserService {
     const payload = { username: user.username, sub: user._id };
     const accessToken = this.jwtService.sign(payload);
 
-    return { accessToken };
+    const apiResponse = new ApiResponse<any>(
+      'success',
+      'successfully generated accessToken',
+      201,
+      accessToken,
+    );
+
+    return apiResponse;
   }
 }
