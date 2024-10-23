@@ -52,7 +52,13 @@ export class UserService {
     });
     await user.save(); // Ensure await to save user properly
 
-    const data = { username: user.username, email: user.email };
+    this.logger.success(`user with id ${user._id} created successfully`);
+
+    const data = {
+      username: user.username,
+      email: user.email,
+      userId: user._id,
+    };
     const apiResponse = new ApiResponse<any>(
       'success',
       'Successfully created user',
