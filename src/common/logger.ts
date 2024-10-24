@@ -1,9 +1,9 @@
 import * as emoji from 'node-emoji';
 import * as winston from 'winston';
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 export default class CustomLogger {
-  private logger: winston.Logger;
+  private logger!: winston.Logger;
   private context: string;
 
   constructor(context: string) {
