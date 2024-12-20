@@ -4,8 +4,8 @@
 
 ## Stay in touch
 
-- Author - @YourAKShaw
-- Website - [yourakshaw.com](yourakshaw.com)
+- Author - [@YourAKShaw](https://www.github.com/YourAKShaw)
+- Website - [yourakshaw.com](https://www.yourakshaw.com)
 - Twitter - [@YourAKShaw](https://x.com/YourAKShaw)
 
 ## License
