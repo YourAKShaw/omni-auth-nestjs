@@ -9,7 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument } from '@src/users/schemas/users.schema';
 import * as bcrypt from 'bcrypt';
 import { ApiResponse } from '@src/common/ApiResponse';
-import CustomLogger from '@src/common/logger'; // Import CustomLogger
+import CustomLogger from '@src/common/logger';
 
 @Injectable()
 export class UsersService {
@@ -44,13 +44,12 @@ export class UsersService {
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create and save the new user
-    const user = new this.userModel({
+    // Create and save the new user using create method
+    const user = await this.userModel.create({
       email,
       username,
       password: hashedPassword,
     });
-    await user.save(); // Ensure await to save user properly
 
     this.logger.success(`user with id ${user._id} created successfully`);
 
@@ -59,6 +58,7 @@ export class UsersService {
       email: user.email,
       userId: user._id,
     };
+
     const apiResponse = new ApiResponse<any>(
       'success',
       'successfully created user',
