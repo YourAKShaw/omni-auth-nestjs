@@ -27,6 +27,14 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<User>> {
+    if (!email) {
+      email = `${username}@optional.com`;
+    }
+
+    if (!username) {
+      username = email.split('@')[0];
+    }
+
     // Check if the user already exists
     const existingUser = await this.userModel.findOne({ email });
     if (existingUser) {
@@ -69,10 +77,19 @@ export class UsersService {
     return apiResponse;
   }
 
-  async signIn(username: string, password: string): Promise<ApiResponse<any>> {
-    const user = await this.userModel.findOne({ username });
+  async signIn(
+    email: string,
+    username: string,
+    password: string,
+  ): Promise<ApiResponse<any>> {
+    let user = null;
+    if (email) {
+      user = await this.userModel.findOne({ email });
+    } else {
+      user = await this.userModel.findOne({ username });
+    }
     if (!user) {
-      this.logger.error('username not found');
+      this.logger.error('user not found');
       throw new UnauthorizedException('username not found');
     }
 
@@ -83,7 +100,11 @@ export class UsersService {
     }
 
     // Generate JWT
-    const payload = { username: user.username, sub: user._id };
+    const payload = {
+      email: user.email,
+      username: user.username,
+      sub: user._id,
+    };
     const accessToken = this.jwtService.sign(payload);
 
     this.logger.success(`accessToken for user with id ${user._id} generated`);
