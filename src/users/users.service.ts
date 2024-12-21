@@ -27,60 +27,22 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<User>> {
-    if (!email) {
-      email = `${username.toLowerCase()}@optional.com`;
-    }
+    const sanitizedEmail = email || `${username.toLowerCase()}@optional.com`;
+    const sanitizedUsername = username || sanitizedEmail.split('@')[0];
+    await this.checkUserExists(sanitizedEmail, sanitizedUsername);
 
-    if (!username) {
-      username = email.split('@')[0];
-    }
+    const hashedPassword = await this.hashPassword(password);
+    const user = await this.createUser(
+      sanitizedEmail,
+      sanitizedUsername,
+      hashedPassword,
+    );
 
-    // Case-insensitive query using regex
-    const existingUser = await this.userModel.findOne({
-      email: { $regex: new RegExp(`^${email}$`, 'i') },
-    });
-
-    if (existingUser) {
-      this.logger.error('email already exists');
-      throw new ConflictException('email already exists');
-    }
-
-    const existingUserByUsername = await this.userModel.findOne({
-      username: { $regex: new RegExp(`^${username}$`, 'i') },
-    });
-
-    if (existingUserByUsername) {
-      this.logger.error('username already exists');
-      throw new ConflictException('username already exists');
-    }
-
-    // Hash the password before saving
-    const salt = await bcrypt.genSalt();
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create and save the new user using create method
-    const user = await this.userModel.create({
-      email,
-      username,
-      password: hashedPassword,
-    });
-
-    this.logger.success(`user with id ${user._id} created successfully`);
-
-    const data = {
+    return this.createApiResponse('successfully created user', {
       username: user.username,
       email: user.email,
       userId: user._id,
-    };
-
-    const apiResponse = new ApiResponse<any>(
-      'success',
-      'successfully created user',
-      201,
-      data,
-    );
-
-    return apiResponse;
+    });
   }
 
   async signIn(
@@ -88,44 +50,81 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<any>> {
-    let user = null;
-    if (email) {
-      user = await this.userModel.findOne({
-        email: { $regex: new RegExp(`^${email}$`, 'i') },
-      });
-    } else {
-      user = await this.userModel.findOne({
-        username: { $regex: new RegExp(`^${username}$`, 'i') },
-      });
-    }
+    const user = await this.findUser(email, username);
+    await this.validatePassword(password, user.password);
 
-    if (!user) {
-      this.logger.error('user not found');
-      throw new UnauthorizedException('username not found');
-    }
+    const accessToken = this.generateAccessToken(user);
+    return this.createApiResponse('successfully generated access token', {
+      accessToken,
+    });
+  }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      this.logger.error('invalid password');
-      throw new UnauthorizedException('invalid password');
-    }
+  private async checkUserExists(
+    email: string,
+    username: string,
+  ): Promise<void> {
+    const emailExists = await this.userModel.findOne({
+      email: { $regex: new RegExp(`^${email}$`, 'i') },
+    });
+    if (emailExists) throw new ConflictException('email already exists');
 
-    // Generate JWT
+    const usernameExists = await this.userModel.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
+    });
+    if (usernameExists) throw new ConflictException('username already exists');
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    const salt = await bcrypt.genSalt();
+    return bcrypt.hash(password, salt);
+  }
+
+  private async createUser(
+    email: string,
+    username: string,
+    hashedPassword: string,
+  ): Promise<UserDocument> {
+    const user = await this.userModel.create({
+      email,
+      username,
+      password: hashedPassword,
+    });
+    this.logger.success(`user with id ${user._id} created successfully`);
+    return user;
+  }
+
+  private async findUser(
+    email: string,
+    username: string,
+  ): Promise<UserDocument> {
+    const query = email
+      ? { email: { $regex: new RegExp(`^${email}$`, 'i') } }
+      : { username: { $regex: new RegExp(`^${username}$`, 'i') } };
+    const user = await this.userModel.findOne(query);
+    if (!user) throw new UnauthorizedException('user not found');
+    return user;
+  }
+
+  private async validatePassword(
+    plainText: string,
+    hashedPassword: string,
+  ): Promise<void> {
+    const isValid = await bcrypt.compare(plainText, hashedPassword);
+    if (!isValid) throw new UnauthorizedException('invalid password');
+  }
+
+  private generateAccessToken(user: UserDocument): string {
     const payload = {
       email: user.email,
       username: user.username,
       sub: user._id,
     };
     const accessToken = this.jwtService.sign(payload);
-
     this.logger.success(`accessToken for user with id ${user._id} generated`);
-    const apiResponse = new ApiResponse<any>(
-      'success',
-      'successfully generated access token',
-      201,
-      { accessToken },
-    );
+    return accessToken;
+  }
 
-    return apiResponse;
+  private createApiResponse(message: string, data: any): ApiResponse<any> {
+    return new ApiResponse<any>('success', message, 201, data);
   }
 }
