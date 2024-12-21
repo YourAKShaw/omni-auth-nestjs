@@ -27,8 +27,6 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<User>> {
-    email = email?.toLowerCase();
-
     if (!email) {
       email = `${username.toLowerCase()}@optional.com`;
     }
@@ -37,19 +35,19 @@ export class UsersService {
       username = email.split('@')[0];
     }
 
-    // Check if the user already exists
-    const existingUser = await this.userModel.findOne({ email });
+    // Case-insensitive query using regex
+    const existingUser = await this.userModel.findOne({
+      email: { $regex: new RegExp(`^${email}$`, 'i') },
+    });
+
     if (existingUser) {
       this.logger.error('email already exists');
       throw new ConflictException('email already exists');
     }
 
-    const existingUserByUsername = await this.userModel
-      .findOne({
-        username,
-      })
-      .collation({ locale: 'en', strength: 2 })
-      .exec();
+    const existingUserByUsername = await this.userModel.findOne({
+      username: { $regex: new RegExp(`^${username}$`, 'i') },
+    });
 
     if (existingUserByUsername) {
       this.logger.error('username already exists');
@@ -90,14 +88,17 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<any>> {
-    email = email?.toLowerCase();
-
     let user = null;
     if (email) {
-      user = await this.userModel.findOne({ email });
+      user = await this.userModel.findOne({
+        email: { $regex: new RegExp(`^${email}$`, 'i') },
+      });
     } else {
-      user = await this.userModel.findOne({ username });
+      user = await this.userModel.findOne({
+        username: { $regex: new RegExp(`^${username}$`, 'i') },
+      });
     }
+
     if (!user) {
       this.logger.error('user not found');
       throw new UnauthorizedException('username not found');
