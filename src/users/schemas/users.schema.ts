@@ -1,14 +1,27 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, SchemaOptions } from 'mongoose';
 
 export type UserDocument = User & Document;
 
-@Schema()
+// Define schema options with collation
+const schemaOptions: SchemaOptions = {
+  collation: { locale: 'en', strength: 2 },
+};
+
+@Schema(schemaOptions)
 export class User {
-  @Prop({ required: false, unique: true }) // Ensure email is required and unique
+  @Prop({
+    required: false,
+    unique: true,
+    index: true,
+  })
   email!: string;
 
-  @Prop({ required: false, unique: true }) // Ensure username is unique
+  @Prop({
+    required: false,
+    unique: true,
+    index: true,
+  })
   username!: string;
 
   @Prop({ required: true })
@@ -16,3 +29,13 @@ export class User {
 }
 
 export const UsersSchema = SchemaFactory.createForClass(User);
+
+// Create case-insensitive indexes
+UsersSchema.index(
+  { username: 1 },
+  { unique: true, collation: { locale: 'en', strength: 2 } },
+);
+UsersSchema.index(
+  { email: 1 },
+  { unique: true, collation: { locale: 'en', strength: 2 } },
+);

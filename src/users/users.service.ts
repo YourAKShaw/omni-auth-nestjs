@@ -27,10 +27,10 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<User>> {
-    email = email.toLowerCase();
+    email = email?.toLowerCase();
 
     if (!email) {
-      email = `${username}@optional.com`;
+      email = `${username.toLowerCase()}@optional.com`;
     }
 
     if (!username) {
@@ -44,7 +44,13 @@ export class UsersService {
       throw new ConflictException('email already exists');
     }
 
-    const existingUserByUsername = await this.userModel.findOne({ username });
+    const existingUserByUsername = await this.userModel
+      .findOne({
+        username,
+      })
+      .collation({ locale: 'en', strength: 2 })
+      .exec();
+
     if (existingUserByUsername) {
       this.logger.error('username already exists');
       throw new ConflictException('username already exists');
@@ -84,7 +90,7 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<any>> {
-    email = email.toLowerCase();
+    email = email?.toLowerCase();
 
     let user = null;
     if (email) {
