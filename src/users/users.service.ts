@@ -27,6 +27,8 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<User>> {
+    email = email.toLowerCase();
+
     if (!email) {
       email = `${username}@optional.com`;
     }
@@ -82,6 +84,8 @@ export class UsersService {
     username: string,
     password: string,
   ): Promise<ApiResponse<any>> {
+    email = email.toLowerCase();
+
     let user = null;
     if (email) {
       user = await this.userModel.findOne({ email });
