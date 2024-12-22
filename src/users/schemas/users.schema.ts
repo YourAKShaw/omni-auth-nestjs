@@ -24,6 +24,16 @@ export class User {
   })
   username!: string;
 
+  @Prop({
+    required: false,
+  })
+  countryCode!: number;
+
+  @Prop({
+    required: false,
+  })
+  phoneNumber!: number;
+
   @Prop({ required: true })
   password!: string;
 }
