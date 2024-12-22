@@ -11,6 +11,7 @@
     "api",
     "readme",
     "jest",
+    "twilio",
     "twilio"
   ]
 }
