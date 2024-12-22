@@ -6,6 +6,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UsersModule } from '@src/users/users.module';
 import { configValidationSchema } from '@src/config/config.validation';
 import { AuthModule } from '@src/auth/auth.module';
+import { TwilioController } from './twilio/twilio.controller';
+import { TwilioService } from './twilio/twilio.service';
 import CustomLogger from '@src/common/logger';
 
 @Module({
@@ -24,13 +26,14 @@ import CustomLogger from '@src/common/logger';
     UsersModule,
     AuthModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, TwilioController],
   providers: [
     AppService,
     {
       provide: CustomLogger,
       useClass: CustomLogger, // Use CustomLogger class globally
     },
+    TwilioService,
   ],
   exports: [CustomLogger], // Export it to make it accessible in other modules
 })
