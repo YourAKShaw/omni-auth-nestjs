@@ -10,23 +10,16 @@ import { User, UserDocument } from '@src/users/schemas/users.schema';
 import * as bcrypt from 'bcrypt';
 import { ApiResponse } from '@src/common/ApiResponse';
 import CustomLogger from '@src/common/logger';
-import { Twilio } from 'twilio';
-import { TwilioConfig } from '@src/config/twilio.config';
 
 @Injectable()
 export class UsersService {
   private readonly logger: any;
-  private readonly twilioClient: Twilio;
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private jwtService: JwtService,
   ) {
     this.logger = new CustomLogger(UsersService.name).getLogger();
-    this.twilioClient = new Twilio(
-      TwilioConfig.accountSid,
-      TwilioConfig.authToken,
-    );
   }
 
   async signUp(
@@ -45,32 +38,11 @@ export class UsersService {
       hashedPassword,
     );
 
-    await this.sendVerificationEmail(user.email);
-
     return this.createApiResponse('successfully created user', {
       username: user.username,
       email: user.email,
       userId: user._id,
     });
-  }
-
-  private async sendVerificationEmail(email: string): Promise<void> {
-    if (!TwilioConfig.verifyServiceSid) {
-      throw new Error('Twilio Verify Service SID is not configured');
-    }
-
-    try {
-      await this.twilioClient.verify.v2
-        .services(TwilioConfig.verifyServiceSid)
-        .verifications.create({
-          to: email,
-          channel: 'email',
-        });
-      this.logger.success(`Verification email sent to ${email}`);
-    } catch (error) {
-      this.logger.error(`Failed to send verification email: ${error}`);
-      throw new Error('Could not send verification email');
-    }
   }
 
   async signIn(
