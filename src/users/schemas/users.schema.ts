@@ -13,14 +13,12 @@ export class User {
   @Prop({
     required: false,
     unique: true,
-    index: true,
   })
   email!: string;
 
   @Prop({
     required: false,
     unique: true,
-    index: true,
   })
   username!: string;
 
