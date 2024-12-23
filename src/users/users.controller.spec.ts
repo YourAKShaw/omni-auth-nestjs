@@ -62,6 +62,8 @@ describe('UsersController', () => {
       const result = await controller.signUp(
         'test@test.com',
         'testuser',
+        91,
+        9831284491,
         'password',
       );
       expect(result).toBe(mockResponse);
@@ -79,7 +81,7 @@ describe('UsersController', () => {
 
       jest.spyOn(service, 'signIn').mockResolvedValue(mockResponse);
 
-      const result = await controller.signIn('', 'testuser', 'password');
+      const result = await controller.signIn('', 'testuser', 0, 0, 'password');
       expect(result).toBe(mockResponse);
     });
   });

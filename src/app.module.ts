@@ -9,6 +9,7 @@ import { AuthModule } from '@src/auth/auth.module';
 import { TwilioController } from './twilio/twilio.controller';
 import { TwilioService } from './twilio/twilio.service';
 import CustomLogger from '@src/common/logger';
+import { TwilioModule } from './twilio/twilio.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import CustomLogger from '@src/common/logger';
         uri: configService.get<string>('MONGO_URI'),
       }),
     }),
+    TwilioModule,
     UsersModule,
     AuthModule,
   ],

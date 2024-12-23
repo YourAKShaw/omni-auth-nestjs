@@ -153,7 +153,7 @@ export class UsersService {
     });
   }
 
-  private async checkUserExists({
+  async checkUserExists({
     email,
     username,
     countryCode,
@@ -228,7 +228,7 @@ export class UsersService {
     return user;
   }
 
-  private async validatePassword(
+  async validatePassword(
     plainText: string,
     hashedPassword: string,
   ): Promise<void> {
@@ -236,7 +236,7 @@ export class UsersService {
     if (!isValid) throw new UnauthorizedException('invalid password');
   }
 
-  private generateAccessToken(user: UserDocument): string {
+  generateAccessToken(user: UserDocument): string {
     const payload = {
       email: user.email,
       username: user.username,
@@ -247,7 +247,7 @@ export class UsersService {
     return accessToken;
   }
 
-  private createApiResponse(message: string, data: any): ApiResponse<any> {
+  createApiResponse(message: string, data: any): ApiResponse<any> {
     return new ApiResponse<any>('success', message, 201, data);
   }
 }

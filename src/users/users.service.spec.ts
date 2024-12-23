@@ -2,16 +2,24 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '@src/users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { getModelToken } from '@nestjs/mongoose';
-import { User } from '@src/users/schemas/users.schema';
+import { User, UserDocument } from '@src/users/schemas/users.schema';
 import { Model } from 'mongoose';
 import { ApiResponse } from '@src/common/ApiResponse';
 import * as bcrypt from 'bcrypt';
+import {
+  BadRequestException,
+  ConflictException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import validatePhoneNumber from '@src/utils/validatePhoneNumber';
 
 jest.mock('bcrypt', () => ({
   genSalt: jest.fn().mockResolvedValue('salt'),
   hash: jest.fn().mockResolvedValue('hashedPassword'),
   compare: jest.fn().mockResolvedValue(true),
 }));
+
+jest.mock('@src/utils/validatePhoneNumber', () => jest.fn());
 
 describe('UserService', () => {
   let service: UsersService;
@@ -22,6 +30,8 @@ describe('UserService', () => {
     email: 'test@example.com',
     username: 'testuser',
     password: 'hashedPassword',
+    countryCode: 1,
+    phoneNumber: 1234567890,
     _id: 'someId',
   };
 
@@ -62,18 +72,18 @@ describe('UserService', () => {
         email: 'test@example.com',
         username: 'testuser',
         password: 'password123',
-        _id: 'someId',
+        countryCode: 1,
+        phoneNumber: 1234567890,
       };
 
       jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
       jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
       jest.spyOn(model, 'create').mockResolvedValueOnce(mockNewUser as any);
 
-      const result = await service.signUp(
-        mockNewUser.email,
-        mockNewUser.username,
-        mockNewUser.password,
-      );
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: true });
+
+      const result = await service.signUp(mockNewUser);
 
       expect(result).toBeInstanceOf(ApiResponse);
       expect(result.status).toBe('success');
@@ -90,26 +100,53 @@ describe('UserService', () => {
         email: 'test@example.com',
         username: 'TestUser',
         password: 'password123',
-        _id: 'someId',
+        countryCode: 1,
+        phoneNumber: 1234567890,
       };
 
       jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
       jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
 
-      await expect(
-        service.signUp(
-          mockNewUser.email,
-          mockNewUser.username,
-          mockNewUser.password,
-        ),
-      ).rejects.toThrow('username already exists');
+      await expect(service.signUp(mockNewUser)).rejects.toThrow(
+        'username already exists',
+      );
 
       expect(model.findOne).toHaveBeenCalledWith({
         username: { $regex: new RegExp('^TestUser$', 'i') },
       });
     });
 
-    // ... rest of your test cases remain the same ...
+    it('should throw BadRequestException for invalid phone number', async () => {
+      const mockNewUser = {
+        email: 'test@example.com',
+        username: 'testuser',
+        password: 'password123',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+      };
+
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: false });
+
+      await expect(service.signUp(mockNewUser)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw ConflictException if email already exists', async () => {
+      const mockNewUser = {
+        email: 'test@example.com',
+        username: 'testuser',
+        countryCode: 0,
+        phoneNumber: 0,
+        password: 'password123',
+      };
+
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+
+      await expect(service.signUp(mockNewUser)).rejects.toThrow(
+        'email already exists',
+      );
+    });
   });
 
   describe('signIn', () => {
@@ -117,11 +154,10 @@ describe('UserService', () => {
       jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
 
-      const result = await service.signIn(
-        'TEST@example.com',
-        '',
-        'password123',
-      );
+      const result = await service.signIn({
+        email: 'TEST@example.com',
+        password: 'password123',
+      });
 
       expect(result).toBeInstanceOf(ApiResponse);
       expect(result.status).toBe('success');
@@ -131,6 +167,135 @@ describe('UserService', () => {
       }
     });
 
-    // ... rest of your test cases remain the same ...
+    it('should throw UnauthorizedException for invalid credentials', async () => {
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+
+      await expect(
+        service.signIn({
+          email: 'TEST@example.com',
+          password: 'password123',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw BadRequestException for invalid phone number', async () => {
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: false });
+
+      await expect(
+        service.signIn({
+          countryCode: 1,
+          phoneNumber: 1234567890,
+          password: 'password123',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should sign in successfully with phone number', async () => {
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: true });
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+
+      const result = await service.signIn({
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        password: 'password123',
+      });
+
+      expect(result).toBeInstanceOf(ApiResponse);
+      expect(result.status).toBe('success');
+      expect(result.data).toBeDefined();
+      if (result.data) {
+        expect(result.data.accessToken).toBe('test-token');
+      }
+    });
+  });
+
+  describe('checkUserExists', () => {
+    it('should throw ConflictException if email already exists', async () => {
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+
+      await expect(
+        service.checkUserExists({
+          email: mockUser.email,
+          username: 'newuser',
+          countryCode: 1,
+          phoneNumber: 1234567890,
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException if username already exists', async () => {
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+
+      await expect(
+        service.checkUserExists({
+          email: 'new@example.com',
+          username: mockUser.username,
+          countryCode: 1,
+          phoneNumber: 1234567890,
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException if phone number already exists', async () => {
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+
+      await expect(
+        service.checkUserExists({
+          email: 'new@example.com',
+          username: 'newuser',
+          countryCode: 1,
+          phoneNumber: mockUser.phoneNumber,
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('validatePassword', () => {
+    it('should throw UnauthorizedException for invalid password', async () => {
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
+
+      await expect(
+        service.validatePassword('plainTextPassword', 'hashedPassword'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should not throw for valid password', async () => {
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+
+      await expect(
+        service.validatePassword('plainTextPassword', 'hashedPassword'),
+      ).resolves.not.toThrow();
+    });
+  });
+
+  describe('generateAccessToken', () => {
+    it('should generate access token', () => {
+      const result = service.generateAccessToken(mockUser as UserDocument);
+
+      expect(result).toBe('test-token');
+      expect(jwtService.sign).toHaveBeenCalledWith({
+        email: mockUser.email,
+        username: mockUser.username,
+        sub: mockUser._id,
+      });
+    });
+  });
+
+  describe('createApiResponse', () => {
+    it('should create an ApiResponse', () => {
+      const message = 'success';
+      const data = { key: 'value' };
+
+      const result = service.createApiResponse(message, data);
+
+      expect(result).toBeInstanceOf(ApiResponse);
+      expect(result.status).toBe('success');
+      expect(result.statusCode).toBe(201);
+      expect(result.data).toBe(data);
+    });
   });
 });
