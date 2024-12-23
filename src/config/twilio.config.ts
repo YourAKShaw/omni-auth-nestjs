@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 export const TwilioConfig = {
   accountSid:
     process.env.TWILIO_ACCOUNT_SID ||
