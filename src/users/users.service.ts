@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -10,6 +11,7 @@ import { User, UserDocument } from '@src/users/schemas/users.schema';
 import * as bcrypt from 'bcrypt';
 import { ApiResponse } from '@src/common/ApiResponse';
 import CustomLogger from '@src/common/logger';
+import validatePhoneNumber from '@src/utils/validatePhoneNumber';
 
 @Injectable()
 export class UsersService {
@@ -22,21 +24,66 @@ export class UsersService {
     this.logger = new CustomLogger(UsersService.name).getLogger();
   }
 
-  async signUp(
-    email: string,
-    username: string,
-    password: string,
-  ): Promise<ApiResponse<User>> {
-    const sanitizedEmail = email || `${username.toLowerCase()}@optional.com`;
-    const sanitizedUsername = username || sanitizedEmail.split('@')[0];
-    await this.checkUserExists(sanitizedEmail, sanitizedUsername);
+  async signUp({
+    email,
+    username,
+    countryCode,
+    phoneNumber,
+    password,
+  }: {
+    email: string;
+    username: string;
+    countryCode: number;
+    phoneNumber: number;
+    password: string;
+  }): Promise<ApiResponse<User>> {
+    if (countryCode && phoneNumber) {
+      const validationResult = validatePhoneNumber({
+        countryCode,
+        phoneNumber,
+      });
+      if (!validationResult.isValid) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message: 'Invalid countryCode and/or phoneNumber provided',
+          error: 'Bad Request',
+        });
+      }
+    }
+
+    let sanitizedEmail = email;
+    if (!email) {
+      if (username) {
+        sanitizedEmail = `${username.toLowerCase()}@optional.com`;
+      } else if (countryCode && phoneNumber) {
+        sanitizedEmail = `${countryCode}${phoneNumber}@optional.com`;
+      }
+    }
+
+    let sanitizedUsername = username;
+    if (!username) {
+      if (email) {
+        sanitizedUsername = sanitizedEmail.split('@')[0];
+      } else if (countryCode && phoneNumber) {
+        sanitizedUsername = `${countryCode}${phoneNumber}`;
+      }
+    }
+
+    await this.checkUserExists({
+      email: sanitizedEmail,
+      username: sanitizedUsername,
+      countryCode,
+      phoneNumber,
+    });
 
     const hashedPassword = await this.hashPassword(password);
-    const user = await this.createUser(
-      sanitizedEmail,
-      sanitizedUsername,
+    const user = await this.createUser({
+      email: sanitizedEmail,
+      username: sanitizedUsername,
+      countryCode,
+      phoneNumber,
       hashedPassword,
-    );
+    });
 
     return this.createApiResponse('successfully created user', {
       username: user.username,
@@ -59,19 +106,35 @@ export class UsersService {
     });
   }
 
-  private async checkUserExists(
-    email: string,
-    username: string,
-  ): Promise<void> {
+  private async checkUserExists({
+    email,
+    username,
+    countryCode,
+    phoneNumber,
+  }: {
+    email: string;
+    username: string;
+    countryCode: number;
+    phoneNumber: number;
+  }): Promise<void> {
+    // Check if email exists (case-insensitive)
     const emailExists = await this.userModel.findOne({
       email: { $regex: new RegExp(`^${email}$`, 'i') },
     });
     if (emailExists) throw new ConflictException('email already exists');
 
+    // Check if username exists (case-insensitive)
     const usernameExists = await this.userModel.findOne({
       username: { $regex: new RegExp(`^${username}$`, 'i') },
     });
     if (usernameExists) throw new ConflictException('username already exists');
+
+    // Check if phoneNumber exists
+    const phoneExists = await this.userModel.findOne({
+      countryCode,
+      phoneNumber,
+    });
+    if (phoneExists) throw new ConflictException('phone number already exists');
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -79,15 +142,25 @@ export class UsersService {
     return bcrypt.hash(password, salt);
   }
 
-  private async createUser(
-    email: string,
-    username: string,
-    hashedPassword: string,
-  ): Promise<UserDocument> {
+  private async createUser({
+    email,
+    username,
+    countryCode,
+    phoneNumber,
+    hashedPassword,
+  }: {
+    email: string;
+    username: string;
+    countryCode: number;
+    phoneNumber: number;
+    hashedPassword: string;
+  }): Promise<UserDocument> {
     const user = await this.userModel.create({
       email,
       username,
       password: hashedPassword,
+      countryCode,
+      phoneNumber,
     });
     this.logger.success(`user with id ${user._id} created successfully`);
     return user;

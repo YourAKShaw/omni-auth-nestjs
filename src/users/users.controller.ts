@@ -9,9 +9,17 @@ export class UsersController {
   async signUp(
     @Body('email') email: string,
     @Body('username') username: string,
+    @Body('countryCode') countryCode: number,
+    @Body('phoneNumber') phoneNumber: number,
     @Body('password') password: string,
   ) {
-    return this.usersService.signUp(email, username, password);
+    return this.usersService.signUp({
+      email,
+      username,
+      countryCode,
+      phoneNumber,
+      password,
+    });
   }
 
   @Post('signin')
