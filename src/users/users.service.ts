@@ -174,12 +174,15 @@ export class UsersService {
     });
     if (usernameExists) throw new ConflictException('username already exists');
 
-    // Check if phoneNumber exists
-    const phoneExists = await this.userModel.findOne({
-      countryCode,
-      phoneNumber,
-    });
-    if (phoneExists) throw new ConflictException('phone number already exists');
+    if (countryCode && phoneNumber) {
+      // Check if phoneNumber exists
+      const phoneExists = await this.userModel.findOne({
+        countryCode,
+        phoneNumber,
+      });
+      if (phoneExists)
+        throw new ConflictException('phone number already exists');
+    }
   }
 
   private async hashPassword(password: string): Promise<string> {
