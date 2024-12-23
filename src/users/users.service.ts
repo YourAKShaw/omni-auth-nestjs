@@ -51,7 +51,7 @@ export class UsersService {
       }
     }
 
-    let sanitizedEmail = email.toLowerCase();
+    let sanitizedEmail = email?.toLowerCase();
     if (!email) {
       if (username) {
         sanitizedEmail = `${username.toLowerCase()}@optional.com`;
@@ -88,6 +88,8 @@ export class UsersService {
     return this.createApiResponse('successfully created user', {
       username: user.username,
       email: user.email,
+      countryCode: user.countryCode,
+      phoneNumber: user.phoneNumber,
       userId: user._id,
     });
   }
