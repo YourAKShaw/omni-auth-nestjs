@@ -51,7 +51,7 @@ export class UsersService {
       }
     }
 
-    let sanitizedEmail = email;
+    let sanitizedEmail = email.toLowerCase();
     if (!email) {
       if (username) {
         sanitizedEmail = `${username.toLowerCase()}@optional.com`;
