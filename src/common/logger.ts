@@ -74,15 +74,18 @@ export default class CustomLogger {
           emojiToLog = emoji.get('grey_question');
       }
 
-      const timestamp = new Date(info.timestamp).toLocaleString('en-US', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: 'numeric',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      });
+      const timestamp = new Date(info.timestamp as string).toLocaleString(
+        'en-US',
+        {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: 'numeric',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        },
+      );
 
       return (
         `${chalk.green('[Winston]')}    ` +
