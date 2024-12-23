@@ -26,8 +26,16 @@ export class UsersController {
   async signIn(
     @Body('email') email: string,
     @Body('username') username: string,
+    @Body('countryCode') countryCode: number,
+    @Body('phoneNumber') phoneNumber: number,
     @Body('password') password: string,
   ) {
-    return this.usersService.signIn(email, username, password);
+    return this.usersService.signIn({
+      email,
+      username,
+      countryCode,
+      phoneNumber,
+      password,
+    });
   }
 }
