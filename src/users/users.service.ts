@@ -92,15 +92,60 @@ export class UsersService {
     });
   }
 
-  async signIn(
-    email: string,
-    username: string,
-    password: string,
-  ): Promise<ApiResponse<any>> {
-    const user = await this.findUser(email, username);
+  async signIn({
+    email,
+    username,
+    countryCode,
+    phoneNumber,
+    password,
+  }: {
+    email?: string;
+    username?: string;
+    countryCode?: number;
+    phoneNumber?: number;
+    password: string;
+  }): Promise<ApiResponse<any>> {
+    let user: UserDocument | null = null;
+
+    // Validate input and prioritize countryCode/phoneNumber if provided
+    if (countryCode && phoneNumber) {
+      const validationResult = validatePhoneNumber({
+        countryCode,
+        phoneNumber,
+      });
+      if (!validationResult.isValid) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message: 'Invalid countryCode and/or phoneNumber provided',
+          error: 'Bad Request',
+        });
+      }
+
+      user = await this.userModel.findOne({
+        countryCode,
+        phoneNumber,
+      });
+    } else if (email) {
+      user = await this.userModel.findOne({
+        email: { $regex: new RegExp(`^${email}$`, 'i') },
+      });
+    } else if (username) {
+      user = await this.userModel.findOne({
+        username: { $regex: new RegExp(`^${username}$`, 'i') },
+      });
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Validate password
     await this.validatePassword(password, user.password);
 
+    // Generate access token
     const accessToken = this.generateAccessToken(user);
+
+    // Return success response
     return this.createApiResponse('successfully generated access token', {
       accessToken,
     });
