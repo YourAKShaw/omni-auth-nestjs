@@ -7,7 +7,7 @@ import { UsersModule } from '@src/users/users.module';
 import { configValidationSchema } from '@src/config/config.validation';
 import { AuthModule } from '@src/auth/auth.module';
 import CustomLogger from '@src/common/logger';
-import { TwilioModule } from './twilio/twilio.module';
+import { TwilioModule } from '@src/twilio/twilio.module';
 
 @Module({
   imports: [
