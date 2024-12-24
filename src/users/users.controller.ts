@@ -11,6 +11,8 @@ export class UsersController {
     @Body('username') username: string,
     @Body('countryCode') countryCode: number,
     @Body('phoneNumber') phoneNumber: number,
+    @Body('whatsappCountryCode') whatsappCountryCode: number,
+    @Body('whatsappPhoneNumber') whatsappPhoneNumber: number,
     @Body('password') password: string,
   ) {
     return this.usersService.signUp({
@@ -18,6 +20,8 @@ export class UsersController {
       username,
       countryCode,
       phoneNumber,
+      whatsappCountryCode,
+      whatsappPhoneNumber,
       password,
     });
   }
@@ -28,6 +32,8 @@ export class UsersController {
     @Body('username') username: string,
     @Body('countryCode') countryCode: number,
     @Body('phoneNumber') phoneNumber: number,
+    @Body('whatsappCountryCode') whatsappCountryCode: number,
+    @Body('whatsappPhoneNumber') whatsappPhoneNumber: number,
     @Body('password') password: string,
   ) {
     return this.usersService.signIn({
@@ -35,6 +41,8 @@ export class UsersController {
       username,
       countryCode,
       phoneNumber,
+      whatsappCountryCode,
+      whatsappPhoneNumber,
       password,
     });
   }
