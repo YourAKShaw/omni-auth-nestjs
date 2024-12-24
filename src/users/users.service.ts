@@ -233,7 +233,7 @@ export class UsersService {
     }
   }
 
-  private sanitizeEmail({
+  sanitizeEmail({
     email,
     username,
     countryCode,
@@ -261,7 +261,7 @@ export class UsersService {
     return sanitizedEmail;
   }
 
-  private sanitizeUsername(
+  sanitizeUsername(
     {
       username,
       email,
@@ -308,7 +308,7 @@ export class UsersService {
     return new ApiResponse<any>('success', message, 201, data);
   }
 
-  private validatePhoneNumber(countryCode: number, phoneNumber: number): void {
+  validatePhoneNumber(countryCode: number, phoneNumber: number): void {
     if (countryCode && phoneNumber) {
       const validationResult = validatePhoneNumber({
         countryCode,
