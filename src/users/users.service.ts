@@ -29,12 +29,16 @@ export class UsersService {
     username,
     countryCode,
     phoneNumber,
+    whatsappCountryCode,
+    whatsappPhoneNumber,
     password,
   }: {
     email: string;
     username: string;
     countryCode: number;
     phoneNumber: number;
+    whatsappCountryCode: number;
+    whatsappPhoneNumber: number;
     password: string;
   }): Promise<ApiResponse<User>> {
     if (countryCode && phoneNumber) {
@@ -51,12 +55,29 @@ export class UsersService {
       }
     }
 
+    if (whatsappCountryCode && whatsappPhoneNumber) {
+      const validationResult = validatePhoneNumber({
+        countryCode: whatsappCountryCode,
+        phoneNumber: whatsappPhoneNumber,
+      });
+      if (!validationResult.isValid) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message:
+            'Invalid whatsappCountryCode and/or whatsappPhoneNumber provided',
+          error: 'Bad Request',
+        });
+      }
+    }
+
     let sanitizedEmail = email?.toLowerCase();
     if (!email) {
       if (username) {
         sanitizedEmail = `${username.toLowerCase()}@optional.com`;
       } else if (countryCode && phoneNumber) {
         sanitizedEmail = `${countryCode}${phoneNumber}@optional.com`;
+      } else if (whatsappCountryCode && whatsappPhoneNumber) {
+        sanitizedEmail = `${whatsappCountryCode}${whatsappPhoneNumber}@optional.com`;
       }
     }
 
@@ -66,6 +87,8 @@ export class UsersService {
         sanitizedUsername = sanitizedEmail.split('@')[0];
       } else if (countryCode && phoneNumber) {
         sanitizedUsername = `${countryCode}${phoneNumber}`;
+      } else if (whatsappCountryCode && whatsappPhoneNumber) {
+        sanitizedUsername = `${whatsappCountryCode}${whatsappPhoneNumber}`;
       }
     }
 
@@ -74,6 +97,8 @@ export class UsersService {
       username: sanitizedUsername,
       countryCode,
       phoneNumber,
+      whatsappCountryCode,
+      whatsappPhoneNumber,
     });
 
     const hashedPassword = await this.hashPassword(password);
@@ -82,6 +107,8 @@ export class UsersService {
       username: sanitizedUsername,
       countryCode,
       phoneNumber,
+      whatsappCountryCode,
+      whatsappPhoneNumber,
       hashedPassword,
     });
 
@@ -90,6 +117,8 @@ export class UsersService {
       email: user.email,
       countryCode: user.countryCode,
       phoneNumber: user.phoneNumber,
+      whatsappCountryCode: user.whatsappCountryCode,
+      whatsappPhoneNumber: user.whatsappPhoneNumber,
       userId: user._id,
     });
   }
@@ -99,12 +128,16 @@ export class UsersService {
     username,
     countryCode,
     phoneNumber,
+    whatsappCountryCode,
+    whatsappPhoneNumber,
     password,
   }: {
     email?: string;
     username?: string;
     countryCode?: number;
     phoneNumber?: number;
+    whatsappCountryCode?: number;
+    whatsappPhoneNumber?: number;
     password: string;
   }): Promise<ApiResponse<any>> {
     let user: UserDocument | null = null;
@@ -126,6 +159,24 @@ export class UsersService {
       user = await this.userModel.findOne({
         countryCode,
         phoneNumber,
+      });
+    } else if (whatsappCountryCode && whatsappPhoneNumber) {
+      const validationResult = validatePhoneNumber({
+        countryCode: whatsappCountryCode,
+        phoneNumber: whatsappPhoneNumber,
+      });
+      if (!validationResult.isValid) {
+        throw new BadRequestException({
+          statusCode: 400,
+          message:
+            'Invalid whatsappCountryCode and/or whatsappPhoneNumber provided',
+          error: 'Bad Request',
+        });
+      }
+
+      user = await this.userModel.findOne({
+        whatsappCountryCode,
+        whatsappPhoneNumber,
       });
     } else if (email) {
       user = await this.userModel.findOne({
@@ -158,11 +209,15 @@ export class UsersService {
     username,
     countryCode,
     phoneNumber,
+    whatsappCountryCode,
+    whatsappPhoneNumber
   }: {
     email: string;
     username: string;
     countryCode: number;
     phoneNumber: number;
+    whatsappCountryCode: number;
+    whatsappPhoneNumber: number;
   }): Promise<void> {
     // Check if email exists (case-insensitive)
     const emailExists = await this.userModel.findOne({
@@ -185,6 +240,16 @@ export class UsersService {
       if (phoneExists)
         throw new ConflictException('phone number already exists');
     }
+
+    if (whatsappCountryCode && whatsappPhoneNumber) {
+      // Check if phoneNumber exists
+      const whatsappPhoneExists = await this.userModel.findOne({
+        whatsappCountryCode,
+        whatsappPhoneNumber,
+      });
+      if (whatsappPhoneExists)
+        throw new ConflictException('whatsapp phone number already exists');
+    }
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -197,12 +262,16 @@ export class UsersService {
     username,
     countryCode,
     phoneNumber,
+    whatsappCountryCode,
+    whatsappPhoneNumber
     hashedPassword,
   }: {
     email: string;
     username: string;
     countryCode: number;
     phoneNumber: number;
+    whatsappCountryCode: number;
+    whatsappPhoneNumber: number;
     hashedPassword: string;
   }): Promise<UserDocument> {
     const user = await this.userModel.create({
@@ -211,6 +280,8 @@ export class UsersService {
       password: hashedPassword,
       countryCode,
       phoneNumber,
+      whatsappCountryCode,
+      whatsappPhoneNumber
     });
     this.logger.success(`user with id ${user._id} created successfully`);
     return user;
