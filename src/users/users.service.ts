@@ -242,13 +242,23 @@ export class UsersService {
     }
 
     if (whatsappCountryCode && whatsappPhoneNumber) {
-      // Check if phoneNumber exists
+      // Check if whatsappPhoneNumber exists
       const whatsappPhoneExists = await this.userModel.findOne({
         whatsappCountryCode,
         whatsappPhoneNumber,
       });
       if (whatsappPhoneExists)
         throw new ConflictException('whatsapp phone number already exists');
+
+      // Check if whatsappPhoneNumber exists as phoneNumber
+      const whatsappPhoneExistsAsPhone = await this.userModel.findOne({
+        countryCode: whatsappCountryCode,
+        phoneNumber: whatsappPhoneNumber,
+      });
+      if (whatsappPhoneExistsAsPhone)
+        throw new ConflictException(
+          'whatsapp phone number already exists as phone number',
+        );
     }
   }
 
