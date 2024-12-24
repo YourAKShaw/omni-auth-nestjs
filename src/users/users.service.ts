@@ -210,7 +210,7 @@ export class UsersService {
     countryCode,
     phoneNumber,
     whatsappCountryCode,
-    whatsappPhoneNumber
+    whatsappPhoneNumber,
   }: {
     email: string;
     username: string;
@@ -263,7 +263,7 @@ export class UsersService {
     countryCode,
     phoneNumber,
     whatsappCountryCode,
-    whatsappPhoneNumber
+    whatsappPhoneNumber,
     hashedPassword,
   }: {
     email: string;
@@ -281,7 +281,7 @@ export class UsersService {
       countryCode,
       phoneNumber,
       whatsappCountryCode,
-      whatsappPhoneNumber
+      whatsappPhoneNumber,
     });
     this.logger.success(`user with id ${user._id} created successfully`);
     return user;
