@@ -3,7 +3,6 @@ import { Document, SchemaOptions } from 'mongoose';
 
 export type UserDocument = User & Document;
 
-// Define schema options with collation
 const schemaOptions: SchemaOptions = {
   collation: { locale: 'en', strength: 2 },
 };
@@ -31,6 +30,16 @@ export class User {
     required: false,
   })
   phoneNumber!: number;
+
+  @Prop({
+    required: false,
+  })
+  whatsappCountryCode!: number;
+
+  @Prop({
+    required: false,
+  })
+  whatsappPhoneNumber!: number;
 
   @Prop({ required: true })
   password!: string;
