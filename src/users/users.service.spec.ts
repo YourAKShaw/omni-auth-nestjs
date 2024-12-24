@@ -21,7 +21,7 @@ jest.mock('bcrypt', () => ({
 
 jest.mock('@src/utils/validatePhoneNumber', () => jest.fn());
 
-describe('UserService', () => {
+describe('UsersService', () => {
   let service: UsersService;
   let model: Model<User>;
   let jwtService: JwtService;
@@ -32,7 +32,18 @@ describe('UserService', () => {
     password: 'hashedPassword',
     countryCode: 1,
     phoneNumber: 1234567890,
+    whatsappCountryCode: 1,
+    whatsappPhoneNumber: 1234567890,
     _id: 'someId',
+    toObject: jest.fn().mockReturnValue({
+      email: 'test@example.com',
+      username: 'testuser',
+      countryCode: 1,
+      phoneNumber: 1234567890,
+      whatsappCountryCode: 1,
+      whatsappPhoneNumber: 1234567890,
+      _id: 'someId',
+    }),
   };
 
   beforeEach(async () => {
@@ -67,19 +78,19 @@ describe('UserService', () => {
   });
 
   describe('signUp', () => {
-    it('should create a new user successfully with email and username', async () => {
+    it('should create a new user successfully with all fields', async () => {
       const mockNewUser = {
         email: 'test@example.com',
         username: 'testuser',
         password: 'password123',
         countryCode: 1,
         phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
       };
 
-      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
-      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
-      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
-      jest.spyOn(model, 'create').mockResolvedValueOnce(mockNewUser as any);
+      jest.spyOn(model, 'findOne').mockResolvedValue(null);
+      jest.spyOn(model, 'create').mockResolvedValue(mockUser as any);
 
       (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: true });
 
@@ -102,6 +113,8 @@ describe('UserService', () => {
         password: 'password123',
         countryCode: 1,
         phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
       };
 
       jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
@@ -123,6 +136,8 @@ describe('UserService', () => {
         password: 'password123',
         countryCode: 1,
         phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
       };
 
       (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: false });
@@ -138,6 +153,8 @@ describe('UserService', () => {
         username: 'testuser',
         countryCode: 0,
         phoneNumber: 0,
+        whatsappCountryCode: 0,
+        whatsappPhoneNumber: 0,
         password: 'password123',
       };
 
@@ -208,6 +225,25 @@ describe('UserService', () => {
         expect(result.data.accessToken).toBe('test-token');
       }
     });
+
+    it('should sign in successfully with WhatsApp number', async () => {
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: true });
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+
+      const result = await service.signIn({
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      });
+
+      expect(result).toBeInstanceOf(ApiResponse);
+      expect(result.status).toBe('success');
+      expect(result.data).toBeDefined();
+      if (result.data) {
+        expect(result.data.accessToken).toBe('test-token');
+      }
+    });
   });
 
   describe('checkUserExists', () => {
@@ -220,6 +256,8 @@ describe('UserService', () => {
           username: 'newuser',
           countryCode: 1,
           phoneNumber: 1234567890,
+          whatsappCountryCode: 1,
+          whatsappPhoneNumber: 1234567890,
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -234,6 +272,8 @@ describe('UserService', () => {
           username: mockUser.username,
           countryCode: 1,
           phoneNumber: 1234567890,
+          whatsappCountryCode: 1,
+          whatsappPhoneNumber: 1234567890,
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -249,6 +289,26 @@ describe('UserService', () => {
           username: 'newuser',
           countryCode: 1,
           phoneNumber: mockUser.phoneNumber,
+          whatsappCountryCode: 1,
+          whatsappPhoneNumber: 1234567890,
+        }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException if WhatsApp phone number already exists', async () => {
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(null);
+      jest.spyOn(model, 'findOne').mockResolvedValueOnce(mockUser as any);
+
+      await expect(
+        service.checkUserExists({
+          email: 'new@example.com',
+          username: 'newuser',
+          countryCode: 1,
+          phoneNumber: 1234567891,
+          whatsappCountryCode: 1,
+          whatsappPhoneNumber: mockUser.phoneNumber,
         }),
       ).rejects.toThrow(ConflictException);
     });
@@ -274,7 +334,9 @@ describe('UserService', () => {
 
   describe('generateAccessToken', () => {
     it('should generate access token', () => {
-      const result = service.generateAccessToken(mockUser as UserDocument);
+      const result = service.generateAccessToken(
+        mockUser as unknown as UserDocument,
+      );
 
       expect(result).toBe('test-token');
       expect(jwtService.sign).toHaveBeenCalledWith({
@@ -296,6 +358,158 @@ describe('UserService', () => {
       expect(result.status).toBe('success');
       expect(result.statusCode).toBe(201);
       expect(result.data).toBe(data);
+    });
+  });
+
+  describe('sanitizeEmail', () => {
+    it('should sanitize email correctly', () => {
+      const signUpDto = {
+        email: 'TEST@Example.com',
+        username: '',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      };
+
+      const result = service.sanitizeEmail(signUpDto);
+
+      expect(result).toBe('test@example.com');
+    });
+
+    it('should generate email from username', () => {
+      const signUpDto = {
+        email: '',
+        username: 'testuser',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      };
+
+      const result = service.sanitizeEmail(signUpDto);
+
+      expect(result).toBe('testuser@optional.com');
+    });
+
+    it('should generate email from phone number', () => {
+      const signUpDto = {
+        email: '',
+        username: '',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        whatsappCountryCode: 0,
+        whatsappPhoneNumber: 0,
+        password: 'password123',
+      };
+
+      const result = service.sanitizeEmail(signUpDto);
+
+      expect(result).toBe('11234567890@optional.com');
+    });
+
+    it('should generate email from WhatsApp number', () => {
+      const signUpDto = {
+        email: '',
+        username: '',
+        countryCode: 0,
+        phoneNumber: 0,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      };
+
+      const result = service.sanitizeEmail(signUpDto);
+
+      expect(result).toBe('11234567890@whatsapp.com');
+    });
+  });
+
+  describe('sanitizeUsername', () => {
+    it('should sanitize username correctly', () => {
+      const signUpDto = {
+        email: 'TEST@Example.com',
+        username: 'TestUser',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      };
+
+      const sanitizedEmail = 'test@example.com';
+      const result = service.sanitizeUsername(signUpDto, sanitizedEmail);
+
+      expect(result).toBe('TestUser');
+    });
+
+    it('should generate username from email', () => {
+      const signUpDto = {
+        email: 'test@example.com',
+        username: '',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      };
+
+      const sanitizedEmail = 'test@example.com';
+      const result = service.sanitizeUsername(signUpDto, sanitizedEmail);
+
+      expect(result).toBe('test');
+    });
+
+    it('should generate username from phone number', () => {
+      const signUpDto = {
+        email: '',
+        username: '',
+        countryCode: 1,
+        phoneNumber: 1234567890,
+        whatsappCountryCode: 0,
+        whatsappPhoneNumber: 0,
+        password: 'password123',
+      };
+
+      const sanitizedEmail = '11234567890@optional.com';
+      const result = service.sanitizeUsername(signUpDto, sanitizedEmail);
+
+      expect(result).toBe('11234567890');
+    });
+
+    it('should generate username from WhatsApp number', () => {
+      const signUpDto = {
+        email: '',
+        username: '',
+        countryCode: 0,
+        phoneNumber: 0,
+        whatsappCountryCode: 1,
+        whatsappPhoneNumber: 1234567890,
+        password: 'password123',
+      };
+
+      const sanitizedEmail = '11234567890@whatsapp.com';
+      const result = service.sanitizeUsername(signUpDto, sanitizedEmail);
+
+      expect(result).toBe('11234567890@whatsapp');
+    });
+  });
+
+  describe('validatePhoneNumber', () => {
+    it('should throw BadRequestException for invalid phone number', () => {
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: false });
+
+      expect(() => service.validatePhoneNumber(1, 1234567890)).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should not throw for valid phone number', () => {
+      (validatePhoneNumber as jest.Mock).mockReturnValue({ isValid: true });
+
+      expect(() => service.validatePhoneNumber(1, 1234567890)).not.toThrow();
     });
   });
 });
