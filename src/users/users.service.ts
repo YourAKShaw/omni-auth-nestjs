@@ -77,7 +77,7 @@ export class UsersService {
       } else if (countryCode && phoneNumber) {
         sanitizedEmail = `${countryCode}${phoneNumber}@optional.com`;
       } else if (whatsappCountryCode && whatsappPhoneNumber) {
-        sanitizedEmail = `${whatsappCountryCode}${whatsappPhoneNumber}@optional.com`;
+        sanitizedEmail = `${whatsappCountryCode}${whatsappPhoneNumber}@whatsapp.com`;
       }
     }
 
@@ -88,7 +88,7 @@ export class UsersService {
       } else if (countryCode && phoneNumber) {
         sanitizedUsername = `${countryCode}${phoneNumber}`;
       } else if (whatsappCountryCode && whatsappPhoneNumber) {
-        sanitizedUsername = `${whatsappCountryCode}${whatsappPhoneNumber}`;
+        sanitizedUsername = `${whatsappCountryCode}${whatsappPhoneNumber}@whatsapp`;
       }
     }
 
